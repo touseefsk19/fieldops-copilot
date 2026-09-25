@@ -1,6 +1,8 @@
-@FieldOps.Api_HostAddress = http://localhost:5266
+   @FieldOps.Api_HostAddress = http://localhost:5266
 
-GET {{FieldOps.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+   GET {{FieldOps.Api_HostAddress}}/health
 
-###
+   ###
+
+   GET {{FieldOps.Api_HostAddress}}/api/info
+   Accept: application/json
