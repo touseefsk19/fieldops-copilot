@@ -2,6 +2,7 @@
   <Folder Name="/practice/">
     <Project Path="practice/Coding01/Coding01.csproj" />
     <Project Path="practice/Coding02/Coding02.csproj" />
+    <Project Path="practice/Coding03/Coding03.csproj" />
     <Project Path="practice/CoreLab/CoreLab.csproj" />
   </Folder>
   <Folder Name="/src/">
