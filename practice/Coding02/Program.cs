@@ -57,12 +57,15 @@ static bool IsValid(string s)
 
 static int MaxProfit(int[] prices)
 {
-    int lowest = int.MaxValue;
-    int best = 0;
-    foreach(var price in prices)
+   
+   int lowest = int.MaxValue;
+   int best = 0;
+
+   foreach(var price in prices)
     {
         lowest = Math.Min(lowest, price);
         best = Math.Max(best, price - lowest);
+
     }
     return best;
 }
