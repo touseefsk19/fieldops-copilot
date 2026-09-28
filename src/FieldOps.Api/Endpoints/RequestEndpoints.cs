@@ -10,7 +10,7 @@ public static class RequestEndpoints
     // Extension method: lets Program.cs call app.MapRequestEndpoints()
     public static void MapRequestEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/requests").WithTags("Requests");
+        var group = app.MapGroup("/api/requests").WithTags("Requests").RequireAuthorization();
 
         // LIST: newest first. AsNoTracking = read-only, faster (EF doesn't track changes)
         group.MapGet("/", async (FieldOpsDbContext db, CancellationToken ct) =>
@@ -71,7 +71,7 @@ public static class RequestEndpoints
         {
             var deleted = await db.MaintenanceRequests.Where(r => r.Id == id).ExecuteDeleteAsync(ct);
             return deleted == 0 ? Results.NotFound() : Results.NoContent();
-        });
+       }).RequireAuthorization("Supervisor");
     }
 
     private static RequestDto ToDto(MaintenanceRequest r) =>
