@@ -57,7 +57,7 @@ WITH Latest AS(
     ROW_NUMBER() OVER (PARTITION BY w.EquipmentId ORDER BY w.OpenedOn DESC) AS rn 
     FROM WorkOrders w
 )
-SELECT e.Tag, l.Id AS LatestOrder, 1.OpenedOn
+SELECT e.Tag, l.Id AS LatestOrder, l.OpenedOn
 FROM Latest l
 INNER JOIN Equipment e ON e.Id = l.EquipmentId
 WHERE l.rn = 1
