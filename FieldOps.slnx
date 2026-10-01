@@ -1,8 +1,15 @@
 <Solution>
+  <Folder Name="/labs/">
+    <Project Path="labs/Lab01Embeddings/Lab01Embeddings.csproj" />
+    <Project Path="labs/Lab02SemanticSearch/Lab02SemanticSearch.csproj" />
+  </Folder>
   <Folder Name="/practice/">
     <Project Path="practice/Coding01/Coding01.csproj" />
     <Project Path="practice/Coding02/Coding02.csproj" />
     <Project Path="practice/Coding03/Coding03.csproj" />
+    <Project Path="practice/Coding04/Coding04.csproj" />
+    <Project Path="practice/Coding05/Coding05.csproj" />
+    <Project Path="practice/Coding06/Coding06.csproj" />
     <Project Path="practice/CoreLab/CoreLab.csproj" />
   </Folder>
   <Folder Name="/src/">

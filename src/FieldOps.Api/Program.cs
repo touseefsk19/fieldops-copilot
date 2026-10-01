@@ -1,3 +1,6 @@
+using System.ClientModel;
+using Microsoft.Extensions.AI;
+using OpenAI;
 using System.Security.Claims;
 using FieldOps.Api.Data;
 using FieldOps.Api.Endpoints;
@@ -18,6 +21,17 @@ builder.Services.AddAuthentication().AddJwtBearer();
 // Authorization: named rules that endpoints can require
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("Supervisor", policy => policy.RequireRole("supervisor"));
+
+// AI: one IChatClient for the whole app, pointed at Ollama's OpenAI-compatible endpoint
+builder.Services.AddSingleton<IChatClient>(sp =>
+{
+   var config = sp.GetRequiredService<IConfiguration>();
+   var openAi = new OpenAIClient(
+    new ApiKeyCredential("ollama"),  // Ollama ignores the key, but the client requires one
+    new OpenAIClientOptions {Endpoint = new Uri(config["Ai:Endpoint"]!)
+    });
+   return openAi.GetChatClient(config["Ai:Model"]!).AsIChatClient(); 
+});
 
 // Register the DbContext. Lifetime = Scoped: one instance per HTTP request
 builder.Services.AddDbContext<FieldOpsDbContext>(options =>
@@ -62,5 +76,6 @@ app.MapGet("/api/me", (ClaimsPrincipal user) => Results.Ok(new
 }))
 .RequireAuthorization();
 app.MapRequestEndpoints();
+app.MapAskEndpoints();
 
 app.Run();
