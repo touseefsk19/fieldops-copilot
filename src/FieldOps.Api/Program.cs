@@ -14,6 +14,7 @@ builder.Logging.AddJsonConsole();
 
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
+builder.Services.AddProblemDetails();
 
 // Authentication: validate JWT bearer tokens (settings come from configuration)
 builder.Services.AddAuthentication().AddJwtBearer();
@@ -39,9 +40,20 @@ builder.Services.AddDbContext<FieldOpsDbContext>(options =>
 
 var app = builder.Build();
 
+// Errors: unhandled exceptions → 500 ProblemDetails (details go to logs, never to the caller)
+app.UseExceptionHandler();
+// Empty error responses (e.g. 404) → ProblemDetails too
+app.UseStatusCodePages();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+
+    // Development only: an endpoint that throws, to prove the error handling works
+    app.MapGet("/api/debug/throw", () =>
+    {
+        throw new InvalidOperationException("Test failure from /api/");
+    });
 
     // Apply pending migrations at startup (development only)
     using var scope = app.Services.CreateScope();
@@ -79,3 +91,5 @@ app.MapRequestEndpoints();
 app.MapAskEndpoints();
 
 app.Run();
+// Lets the test project start this API in memory (WebApplicationFactory<Program>)
+public partial class Program{}
