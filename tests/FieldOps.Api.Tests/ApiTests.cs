@@ -49,4 +49,13 @@ public class ApiTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
         Assert.DoesNotContain("Test failure", body);
     }
+
+
+    [Fact]
+    public async Task Ingest_without_token_returns_401()
+    {
+        var response = await _client.PostAsync("/api/manuals/ingest", null);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 }

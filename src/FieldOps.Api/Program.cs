@@ -4,6 +4,7 @@ using OpenAI;
 using System.Security.Claims;
 using FieldOps.Api.Data;
 using FieldOps.Api.Endpoints;
+using FieldOps.Api.Rag;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,6 +34,10 @@ builder.Services.AddSingleton<IChatClient>(sp =>
     });
    return openAi.GetChatClient(config["Ai:Model"]!).AsIChatClient(); 
 });
+
+// AI: the embedding client, a typed HttpClient pointed at Ollama
+builder.Services.AddHttpClient<OllamaEmbedder>(client =>
+    client.BaseAddress = new Uri(builder.Configuration["Ai:OllamaBase"]!));
 
 // Register the DbContext. Lifetime = Scoped: one instance per HTTP request
 builder.Services.AddDbContext<FieldOpsDbContext>(options =>
@@ -89,6 +94,7 @@ app.MapGet("/api/me", (ClaimsPrincipal user) => Results.Ok(new
 .RequireAuthorization();
 app.MapRequestEndpoints();
 app.MapAskEndpoints();
+app.MapManualEndpoints();
 
 app.Run();
 // Lets the test project start this API in memory (WebApplicationFactory<Program>)

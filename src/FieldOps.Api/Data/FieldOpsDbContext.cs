@@ -8,6 +8,8 @@ public class FieldOpsDbContext(DbContextOptions<FieldOpsDbContext> options) : Db
 {
     public DbSet<MaintenanceRequest> MaintenanceRequests => Set<MaintenanceRequest>(); // = a table
 
+    public DbSet<ManualChunk> ManualChunks => Set<ManualChunk>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<MaintenanceRequest>(e =>
@@ -17,5 +19,14 @@ public class FieldOpsDbContext(DbContextOptions<FieldOpsDbContext> options) : Db
             e.Property(r => r.Status).HasConversion<string>().HasMaxLength(20); // store "Open", not 0
             e.HasIndex(r => r.Status);                                         // fast filtering by status
         });
+
+
+        modelBuilder.Entity<ManualChunk>(e =>
+        {
+            e.Property(c => c.Source).HasMaxLength(200).IsRequired();
+            e.Property(c => c.Section).HasMaxLength(200).IsRequired();
+            e.HasIndex(c => c.Source);  // ingest deletes by Source, so make that fast
+        });
+
     }
 }
