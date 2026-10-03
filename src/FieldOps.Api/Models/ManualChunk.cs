@@ -8,4 +8,5 @@ public class ManualChunk
     public string Section { get; set; } = "";       // heading, e.g. "4.2 Coupling bolts and alignment"
     public string Text { get; set; } = "";          // the section text that gets embedded and quoted
     public string EmbeddingJson { get; set; } = ""; // the float[] vector, stored as JSON text
+    public string Audience { get; set; } = "all";   // who may see it: "all" or "supervisor"
 }

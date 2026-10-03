@@ -3,6 +3,7 @@ using FieldOps.Api.Data;
 using FieldOps.Api.Models;
 using FieldOps.Api.Rag;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace FieldOps.Api.Endpoints;
 
@@ -17,12 +18,15 @@ public static class ManualEndpoints
             FieldOpsDbContext db, OllamaEmbedder embedder, IWebHostEnvironment env, CancellationToken ct) =>
         {
             var folder = Path.Combine(env.ContentRootPath, "Manuals");
-            var files = Directory.GetFiles(folder, "*.md");
+            var files = Directory.GetFiles(folder, "*.md", SearchOption.AllDirectories);
             int total = 0;
 
             foreach (var file in files)
             {
                 var source = Path.GetFileName(file);
+
+                // Files inside Manuals/supervisor/ are Supervisor-only; everything else is for all
+                var audience = Path.GetFileName(Path.GetDirectoryName(file)) == "supervisor" ? "supervisor" : "all";
 
                 // Re-ingesting a file replaces its old chunks, so running this twice never duplicates
                 await db.ManualChunks.Where(c => c.Source == source).ExecuteDeleteAsync(ct);
@@ -36,7 +40,8 @@ public static class ManualEndpoints
                         Source = source,
                         Section = chunk.Section,
                         Text = chunk.Text,
-                        EmbeddingJson = JsonSerializer.Serialize(vector)
+                        EmbeddingJson = JsonSerializer.Serialize(vector),
+                        Audience = audience
                     });
                     total++;
                 }
@@ -48,12 +53,14 @@ public static class ManualEndpoints
         .RequireAuthorization("Supervisor")
         .WithTags("Manuals");
 
-        // Any signed-in user: list what's in the knowledge base (no text, no vectors)
-        app.MapGet("/api/manuals", async (FieldOpsDbContext db, CancellationToken ct) =>
+       // Any signed-in user: list the sections THEY may see (no text, no vectors)
+        app.MapGet("/api/manuals", async (FieldOpsDbContext db, ClaimsPrincipal user, CancellationToken ct) =>
         {
+            var isSupervisor = user.IsInRole("supervisor");
             var list = await db.ManualChunks
+                .Where(c => c.Audience == "all" || isSupervisor)
                 .OrderBy(c => c.Source).ThenBy(c => c.Id)
-                .Select(c => new { c.Id, c.Source, c.Section })
+                .Select(c => new { c.Id, c.Source, c.Section, c.Audience })
                 .ToListAsync(ct);
             return Results.Ok(list);
         })

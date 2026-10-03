@@ -26,6 +26,7 @@ public class FieldOpsDbContext(DbContextOptions<FieldOpsDbContext> options) : Db
             e.Property(c => c.Source).HasMaxLength(200).IsRequired();
             e.Property(c => c.Section).HasMaxLength(200).IsRequired();
             e.HasIndex(c => c.Source);  // ingest deletes by Source, so make that fast
+            e.Property(c => c.Audience).HasMaxLength(20).IsRequired();
         });
 
     }

@@ -43,6 +43,9 @@ builder.Services.AddHttpClient<OllamaEmbedder>(client =>
 builder.Services.AddDbContext<FieldOpsDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("FieldOps")));
 
+// RAG: retrieval shared by /api/ask and /api/eval
+builder.Services.AddScoped<Retriever>();
+
 var app = builder.Build();
 
 // Errors: unhandled exceptions → 500 ProblemDetails (details go to logs, never to the caller)
@@ -95,6 +98,7 @@ app.MapGet("/api/me", (ClaimsPrincipal user) => Results.Ok(new
 app.MapRequestEndpoints();
 app.MapAskEndpoints();
 app.MapManualEndpoints();
+app.MapEvalEndpoints();
 
 app.Run();
 // Lets the test project start this API in memory (WebApplicationFactory<Program>)

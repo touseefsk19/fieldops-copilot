@@ -1,7 +1,5 @@
-using System.Text.Json;
-using FieldOps.Api.Data;
+using System.Security.Claims;
 using FieldOps.Api.Rag;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 
 namespace FieldOps.Api.Endpoints;
@@ -12,13 +10,12 @@ public record AskResponse(string Answer, List<Citation> Citations, long? InputTo
 
 public static class AskEndpoints
 {
-    private const double MinScore = 0.35; // the gate: below this, no section is relevant enough
-    private const int TopK = 3;           // how many sections go into the prompt
+    private const int TopK = 3; // at most 3 sections go into the prompt
 
     public static void MapAskEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/api/ask", async (AskRequest request, FieldOpsDbContext db, OllamaEmbedder embedder,
-            IChatClient chat, CancellationToken ct) =>
+        app.MapPost("/api/ask", async (AskRequest request, Retriever retriever, IChatClient chat,
+            ClaimsPrincipal user, CancellationToken ct) =>
         {
             if (string.IsNullOrWhiteSpace(request.Question))
                 return Results.ValidationProblem(new Dictionary<string, string[]>
@@ -26,28 +23,18 @@ public static class AskEndpoints
                     ["question"] = ["Question is required."]
                 });
 
-            // 1. RETRIEVE: embed the question, score every section, keep the best 3
-            var questionVector = await embedder.EmbedAsync(request.Question, ct);
-            var chunks = await db.ManualChunks.AsNoTracking().ToListAsync(ct);
+            // 1. RETRIEVE: only sections this user may see, best 3 first
+            var hits = await retriever.SearchAsync(request.Question, user.IsInRole("supervisor"), TopK, ct);
 
-            var top = chunks
-                .Select(c => new
-                {
-                    Chunk = c,
-                    Score = VectorMath.Cosine(questionVector, JsonSerializer.Deserialize<float[]>(c.EmbeddingJson)!)
-                })
-                .OrderByDescending(x => x.Score)
-                .Take(TopK)
-                .ToList();
-
-            // 2. GATE: no good evidence → no LLM call, no made-up answer
-            if (top.Count == 0 || top[0].Score < MinScore)
+            // 2. GATE + FILTER: only sections that pass the bar reach the model (weak ones confuse it)
+            var top = hits.Where(h => h.Score >= Retriever.MinScore).ToList();
+            if (top.Count == 0)
                 return Results.Ok(new AskResponse(
                     "I can't find this in the manuals I have. Please check with your supervisor.", [], null, null));
 
             // 3. AUGMENT: numbered sources, so the model can cite [1], [2], [3]
-            var sources = string.Join("\n\n", top.Select((x, i) =>
-                $"[{i + 1}] ({x.Chunk.Source}, section {x.Chunk.Section}) {x.Chunk.Text}"));
+            var sources = string.Join("\n\n", top.Select((h, i) =>
+                $"[{i + 1}] ({h.Chunk.Source}, section {h.Chunk.Section}) {h.Chunk.Text}"));
 
             List<ChatMessage> messages =
             [
@@ -62,7 +49,7 @@ public static class AskEndpoints
             var response = await chat.GetResponseAsync(messages, new ChatOptions { Temperature = 0f }, ct);
 
             var citations = top
-                .Select((x, i) => new Citation(i + 1, x.Chunk.Source, x.Chunk.Section, Math.Round(x.Score, 3)))
+                .Select((h, i) => new Citation(i + 1, h.Chunk.Source, h.Chunk.Section, Math.Round(h.Score, 3)))
                 .ToList();
 
             return Results.Ok(new AskResponse(
