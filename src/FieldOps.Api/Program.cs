@@ -6,6 +6,7 @@ using FieldOps.Api.Data;
 using FieldOps.Api.Endpoints;
 using FieldOps.Api.Rag;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,6 +47,20 @@ builder.Services.AddDbContext<FieldOpsDbContext>(options =>
 // RAG: retrieval shared by /api/ask and /api/eval
 builder.Services.AddScoped<Retriever>();
 
+// Rate limiting: each signed-in user gets 10 AI calls per minute
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("ai", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.User.Identity?.Name ?? "anonymous",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+});
+
 var app = builder.Build();
 
 // Errors: unhandled exceptions → 500 ProblemDetails (details go to logs, never to the caller)
@@ -72,6 +87,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();   // after auth, so the limiter knows WHO is calling
 
 app.MapHealthChecks("/health");
 
