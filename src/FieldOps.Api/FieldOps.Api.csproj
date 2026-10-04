@@ -19,4 +19,10 @@
     <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="10.10.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The manuals must ship with the app, or ingest finds no files in the container -->
+    <None Update="Manuals\**\*.md" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+
 </Project>
