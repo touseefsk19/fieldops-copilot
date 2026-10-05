@@ -32,8 +32,10 @@ public static class AskEndpoints
             // 1. RETRIEVE: only sections this user may see, best 3 first
             var hits = await retriever.SearchAsync(question, user.IsInRole("supervisor"), TopK, ct);
 
-            // 2. GATE + FILTER: only sections that pass the bar reach the model
-            var top = hits.Where(h => h.Score >= Retriever.MinScore).ToList();
+                        // 2. GATE + FILTER: keep a section if its meaning OR its keywords match strongly
+            var top = hits
+                .Where(h => h.Score >= Retriever.MinScore || h.KeywordScore >= Retriever.MinKeywordScore)
+                .ToList();
             if (top.Count == 0)
                 return Results.Ok(new AskResponse(
                     "I can't find this in the manuals I have. Please check with your supervisor.", [], null, null));

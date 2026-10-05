@@ -49,15 +49,15 @@ public static class EvalEndpoints
 
     public static void MapEvalEndpoints(this IEndpointRouteBuilder app)
     {
-        // Supervisor only: runs retrieval (no LLM) for every case and scores it
-        app.MapPost("/api/eval/retrieval", async (Retriever retriever, CancellationToken ct) =>
+            // Supervisor only: runs retrieval (no LLM) for every case and scores it
+            app.MapPost("/api/eval/retrieval", async (Retriever retriever, CancellationToken ct, SearchMode mode = SearchMode.Hybrid) =>
         {
             var results = new List<EvalResult>();
 
             foreach (var c in Cases)
             {
                 // true = search everything, because the eval includes a Supervisor-only case
-                var hits = await retriever.SearchAsync(c.Question, true, 3, ct);
+                var hits = await retriever.SearchAsync(c.Question, true, 3, ct, mode);
 
                 bool IsExpected(SearchHit h) => h.Chunk.Source == c.ExpectedSource && h.Chunk.Section == c.ExpectedSection;
 
