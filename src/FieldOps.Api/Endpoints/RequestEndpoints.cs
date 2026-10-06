@@ -64,7 +64,7 @@ public static class RequestEndpoints
             entity.Status = status;                // EF detects the change (tracked entity)
             await db.SaveChangesAsync(ct);          // UPDATE runs here
             return Results.Ok(ToDto(entity));
-        });
+        }).RequireAuthorization("Supervisor");      // only supervisors change status: no bypass of the approval flow
 
         // DELETE: ExecuteDeleteAsync runs one DELETE statement without loading the row first
         group.MapDelete("/{id:int}", async (int id, FieldOpsDbContext db, CancellationToken ct) =>

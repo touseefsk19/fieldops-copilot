@@ -14,6 +14,7 @@
     <Project Path="practice/Coding07/Coding07.csproj" />
     <Project Path="practice/Coding08/Coding08.csproj" />
     <Project Path="practice/CoreLab/CoreLab.csproj" />
+    <Project Path="practice/Quest01/Quest01.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/FieldOps.Api/FieldOps.Api.csproj" />

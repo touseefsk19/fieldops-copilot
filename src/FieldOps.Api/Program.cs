@@ -7,6 +7,7 @@ using FieldOps.Api.Endpoints;
 using FieldOps.Api.Rag;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.RateLimiting;
+using FieldOps.Api.Agent;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,6 +47,10 @@ builder.Services.AddDbContext<FieldOpsDbContext>(options =>
 
 // RAG: retrieval shared by /api/ask and /api/eval
 builder.Services.AddScoped<Retriever>();
+
+// Agent tools: Scoped (they use the DbContext); HttpContextAccessor lets them see who's calling
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<FieldOpsTools>();
 
 // Rate limiting: each signed-in user gets 10 AI calls per minute
 builder.Services.AddRateLimiter(options =>
@@ -115,6 +120,7 @@ app.MapRequestEndpoints();
 app.MapAskEndpoints();
 app.MapManualEndpoints();
 app.MapEvalEndpoints();
+app.MapAgentEndpoints();
 
 app.Run();
 // Lets the test project start this API in memory (WebApplicationFactory<Program>)

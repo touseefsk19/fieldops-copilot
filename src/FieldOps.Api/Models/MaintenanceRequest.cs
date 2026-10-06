@@ -11,4 +11,4 @@ public class MaintenanceRequest
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 }
 
-public enum RequestStatus { Open, Approved, InProgress, Closed }
+public enum RequestStatus { Open, Approved, InProgress, Closed, PendingApproval }

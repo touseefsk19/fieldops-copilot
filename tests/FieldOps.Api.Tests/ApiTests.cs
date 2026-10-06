@@ -67,4 +67,13 @@ public class ApiTests : IClassFixture<WebApplicationFactory<Program>>
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
+
+
+    [Fact]
+    public async Task Approve_without_token_returns_401()
+    {
+        var response = await _client.PostAsync("/api/requests/1/approve", null);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 }
