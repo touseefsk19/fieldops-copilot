@@ -26,7 +26,9 @@ public class FieldOpsTools(FieldOpsDbContext db, IHttpContextAccessor http)
 
         var result = parts.Count == 0
             ? $"No part matches '{query}'."
-            : string.Join("; ", parts.Select(p => $"{p.PartNumber} {p.Name}: {p.Quantity} in bin {p.Bin}"));
+                : string.Join("; ", parts.Select(p => p.Quantity == 0
+                ? $"{p.PartNumber} {p.Name}: OUT OF STOCK (bin {p.Bin})"
+                : $"{p.PartNumber} {p.Name}: {p.Quantity} in stock, bin {p.Bin}"));
 
         await AuditAsync("LookupStock", query, result, ct);
         return result;
@@ -54,7 +56,7 @@ public class FieldOpsTools(FieldOpsDbContext db, IHttpContextAccessor http)
 
         var result = $"Request {request.Id} created and waiting for supervisor approval.";
         await AuditAsync("CreateRequest", $"{title} | {equipment}", result, ct);
-        return PiiRedactor.Redact(result);
+        return result;
     }
 
     [Description("Check the status of a maintenance request by its number.")]
@@ -79,7 +81,7 @@ public class FieldOpsTools(FieldOpsDbContext db, IHttpContextAccessor http)
             User = CurrentUser,
             Action = action,
             Input = PiiRedactor.Redact(input),
-            Result = result
+            Result = PiiRedactor.Redact(result)   // results can quote stored text too (e.g. old request titles)
         });
         await db.SaveChangesAsync(ct);
     }

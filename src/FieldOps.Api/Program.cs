@@ -121,6 +121,7 @@ app.MapAskEndpoints();
 app.MapManualEndpoints();
 app.MapEvalEndpoints();
 app.MapAgentEndpoints();
+app.MapAgentChatEndpoints();
 
 app.Run();
 // Lets the test project start this API in memory (WebApplicationFactory<Program>)

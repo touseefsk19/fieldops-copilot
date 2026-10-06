@@ -76,4 +76,13 @@ public class ApiTests : IClassFixture<WebApplicationFactory<Program>>
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
+
+
+    [Fact]
+    public async Task Agent_without_token_returns_401()
+    {
+        var response = await _client.PostAsync("/api/agent", null);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 }
