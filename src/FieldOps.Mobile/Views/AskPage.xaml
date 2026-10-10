@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:FieldOps.Mobile.ViewModels"
+             xmlns:m="clr-namespace:FieldOps.Mobile.Models"
+             x:Class="FieldOps.Mobile.Views.AskPage"
+             x:DataType="vm:AskViewModel"
+             Title="Ask the manuals">
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="12">
+            <Editor Text="{Binding Question}"
+                    Placeholder="e.g. How do I restore power after a trip?"
+                    AutoSize="TextChanges" MaxLength="500" />
+            <Button Text="Ask" Command="{Binding AskCommand}" />
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+            <Label Text="{Binding Error}" TextColor="Red" />
+            <Label Text="{Binding Answer}" FontSize="16" />
+
+            <Label Text="Sources" FontAttributes="Bold" />
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding Citations}" Spacing="8">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="m:Citation">
+                        <VerticalStackLayout>
+                            <Label Text="{Binding Number, StringFormat='[{0}]'}" FontAttributes="Bold" />
+                            <Label Text="{Binding Section}" />
+                            <Label Text="{Binding Source}" FontSize="12" TextColor="Gray" />
+                            <Label Text="{Binding Score, StringFormat='score {0:0.000}'}" FontSize="12" TextColor="Gray" />
+                        </VerticalStackLayout>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
