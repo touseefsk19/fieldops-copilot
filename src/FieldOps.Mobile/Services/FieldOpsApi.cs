@@ -10,16 +10,31 @@ public class ApiException(string message) : Exception(message);
 
 public class FieldOpsApi(HttpClient http, TokenStore tokens)
 {
-    public async Task<AskResponse> AskAsync(string question, CancellationToken ct = default)
+    // Every endpoint is now one line
+    public Task<AskResponse> AskAsync(string question, CancellationToken ct = default) =>
+        SendJsonAsync<AskResponse>(HttpMethod.Post, "/api/ask", new AskRequest(question), ct);
+
+    public Task<MeResponse> GetMeAsync(CancellationToken ct = default) =>
+        SendJsonAsync<MeResponse>(HttpMethod.Get, "/api/me", null, ct);
+
+    public Task<List<RequestDto>> GetRequestsAsync(CancellationToken ct = default) =>
+        SendJsonAsync<List<RequestDto>>(HttpMethod.Get, "/api/requests", null, ct);
+
+    public Task<ApproveResponse> ApproveAsync(int id, CancellationToken ct = default) =>
+        SendJsonAsync<ApproveResponse>(HttpMethod.Post, $"/api/requests/{id}/approve", null, ct);
+
+    public Task<AgentResponse> SendToAgentAsync(string message, CancellationToken ct = default) =>
+        SendJsonAsync<AgentResponse>(HttpMethod.Post, "/api/agent", new AgentRequest(message), ct);
+
+    // The one path every call takes: token → send → friendly errors → read JSON as T
+    private async Task<T> SendJsonAsync<T>(HttpMethod method, string path, object? body, CancellationToken ct)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/ask")
-        {
-            Content = JsonContent.Create(new AskRequest(question))
-        };
+        using var request = new HttpRequestMessage(method, path);
+        if (body is not null) request.Content = JsonContent.Create(body);
         AddToken(request);
 
         using var response = await SendAsync(request, ct);
-        return await response.Content.ReadFromJsonAsync<AskResponse>(ct)
+        return await response.Content.ReadFromJsonAsync<T>(ct)
                ?? throw new ApiException("The server sent an empty answer.");
     }
 
@@ -31,7 +46,6 @@ public class FieldOpsApi(HttpClient http, TokenStore tokens)
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
-    // Every call goes through here: network errors and status codes become friendly messages
     private async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
         HttpResponseMessage response;
@@ -53,9 +67,11 @@ public class FieldOpsApi(HttpClient http, TokenStore tokens)
         var message = response.StatusCode switch
         {
             HttpStatusCode.Unauthorized => "Token missing or expired. Paste a fresh one in Settings.",
-            HttpStatusCode.Forbidden => "Your role can't do this.",
-            HttpStatusCode.TooManyRequests => "Too many questions this minute. Wait a moment and try again.",
-            HttpStatusCode.BadRequest => "The question must be 1–500 characters.",
+            HttpStatusCode.Forbidden => "Only a supervisor can do this.",
+            HttpStatusCode.NotFound => "Not found. Refresh the list.",
+            HttpStatusCode.Conflict => "This request is no longer waiting for approval. Refresh the list.",
+            HttpStatusCode.TooManyRequests => "Too many requests this minute. Wait a moment and try again.",
+            HttpStatusCode.BadRequest => "The text must be 1–500 characters.",
             _ => $"Server error ({(int)response.StatusCode})."
         };
         response.Dispose();

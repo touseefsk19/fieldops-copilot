@@ -4,8 +4,10 @@
        xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
        xmlns:views="clr-namespace:FieldOps.Mobile.Views"
        Title="FieldOps">
-    <TabBar>
+        <TabBar>
         <ShellContent Title="Ask" ContentTemplate="{DataTemplate views:AskPage}" Route="ask" />
+        <ShellContent Title="Assistant" ContentTemplate="{DataTemplate views:AgentPage}" Route="assistant" />
+        <ShellContent Title="Requests" ContentTemplate="{DataTemplate views:RequestsPage}" Route="requests" />
         <ShellContent Title="Settings" ContentTemplate="{DataTemplate views:SettingsPage}" Route="settings" />
     </TabBar>
 </Shell>

@@ -35,6 +35,10 @@ public static class MauiProgram
         builder.Services.AddTransient<AskPage>();
         builder.Services.AddTransient<SettingsViewModel>();
         builder.Services.AddTransient<SettingsPage>();
+		        builder.Services.AddTransient<RequestsViewModel>();
+        builder.Services.AddTransient<RequestsPage>();
+        builder.Services.AddTransient<AgentViewModel>();
+        builder.Services.AddTransient<AgentPage>();
 
 #if DEBUG
         builder.Logging.AddDebug();

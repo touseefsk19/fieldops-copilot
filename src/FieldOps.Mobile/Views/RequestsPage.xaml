@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:FieldOps.Mobile.ViewModels"
+             x:Class="FieldOps.Mobile.Views.RequestsPage"
+             x:DataType="vm:RequestsViewModel"
+             Title="Requests">
+    <Grid RowDefinitions="Auto,Auto,*" Padding="20" RowSpacing="10">
+        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+            <Label Text="{Binding WhoAmI}" VerticalOptions="Center" />
+            <ActivityIndicator Grid.Column="1" IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+            <Button Grid.Column="2" Text="Refresh" Command="{Binding LoadCommand}" />
+        </Grid>
+
+        <Label Grid.Row="1" Text="{Binding Message}" TextColor="OrangeRed" />
+
+        <CollectionView Grid.Row="2" ItemsSource="{Binding Requests}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="vm:RequestItem">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Padding="0,8">
+                        <VerticalStackLayout>
+                            <Label Text="{Binding Title}" FontAttributes="Bold" />
+                            <Label Text="{Binding Subtitle}" FontSize="12" TextColor="Gray" />
+                            <Label Text="{Binding Status}" FontSize="12" />
+                        </VerticalStackLayout>
+                        <Button Grid.Column="1" Text="Approve" VerticalOptions="Center"
+                                IsVisible="{Binding CanApprove}"
+                                Command="{Binding ApproveCommand}"
+                                CommandParameter="{Binding .}" />
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>
