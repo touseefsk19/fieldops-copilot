@@ -6,7 +6,7 @@ using FieldOps.Mobile.Services;
 namespace FieldOps.Mobile.ViewModels;
 
 // One line in the chat. Tools is empty for your own messages.
-public record ChatLine(string Who, string Text, string Tools);
+public record ChatLine(string Who, string Text, string Tools, string Note);
 
 public partial class AgentViewModel(FieldOpsApi api) : ObservableObject
 {
@@ -22,17 +22,20 @@ public partial class AgentViewModel(FieldOpsApi api) : ObservableObject
         if (IsBusy || text.Length == 0) return;
 
         Message = "";                               // clear the box (the Part 1 lesson: old text leaks)
-        Lines.Add(new ChatLine("You", text, ""));
+        Lines.Add(new ChatLine("You", text, "", ""));
         IsBusy = true;
         try
         {
             var reply = await api.SendToAgentAsync(text);
-            var tools = reply.ToolsCalled.Count == 0 ? "" : "Tools used: " + string.Join(", ", reply.ToolsCalled);
-            Lines.Add(new ChatLine("FieldOps", reply.Reply, tools));
+                        var tools = reply.ToolsCalled.Count == 0 ? "" : "Tools used: " + string.Join(", ", reply.ToolsCalled);
+            var note = reply.CreatedRequestIds is { Count: > 0 } ids
+                ? string.Join("\n", ids.Select(id => $"Request #{id} · waiting for supervisor approval"))
+                : "";
+            Lines.Add(new ChatLine("FieldOps", reply.Reply, tools, note));
         }
         catch (ApiException ex)
         {
-            Lines.Add(new ChatLine("Error", ex.Message, ""));
+            Lines.Add(new ChatLine("Error", ex.Message, "", ""));
         }
         finally
         {

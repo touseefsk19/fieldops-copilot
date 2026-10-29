@@ -409,6 +409,13 @@
     <Style TargetType="Page" ApplyToDerivedTypes="True">
         <Setter Property="Padding" Value="0"/>
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}" />
+                <Setter Property="Shell.TabBarIsVisible">
+            <Setter.Value>
+                <OnPlatform x:TypeArguments="x:Boolean" Default="True">
+                    <On Platform="MacCatalyst" Value="False" />
+                </OnPlatform>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style TargetType="Shell" ApplyToDerivedTypes="True">

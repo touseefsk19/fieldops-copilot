@@ -14,6 +14,7 @@
             <Button Text="Ask" Command="{Binding AskCommand}" />
             <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
             <Label Text="{Binding Error}" TextColor="Red" />
+            <Label Text="{Binding AskedQuestion}" FontAttributes="Italic" TextColor="Gray" />
             <Label Text="{Binding Answer}" FontSize="16" />
 
             <Label Text="Sources" FontAttributes="Bold" />

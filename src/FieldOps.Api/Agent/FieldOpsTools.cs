@@ -12,6 +12,11 @@ public class FieldOpsTools(FieldOpsDbContext db, IHttpContextAccessor http)
 {
     private string CurrentUser => http.HttpContext?.User.Identity?.Name ?? "unknown";
 
+
+    // Filled while the agent runs: lets the endpoint return real request numbers,
+    // instead of hoping the model mentions them in its reply
+    public List<int> CreatedRequestIds { get; } = [];
+
     [Description("Look up spare parts in the warehouse by part number or name. Returns quantity and bin.")]
     public async Task<string> LookupStockAsync(
         [Description("A part number like SK-200, or a word from the part name like 'seal'")] string query,
@@ -53,6 +58,7 @@ public class FieldOpsTools(FieldOpsDbContext db, IHttpContextAccessor http)
         };
         db.MaintenanceRequests.Add(request);
         await db.SaveChangesAsync(ct);
+        CreatedRequestIds.Add(request.Id);   // the database gave it an Id on save
 
         var result = $"Request {request.Id} created and waiting for supervisor approval.";
         await AuditAsync("CreateRequest", $"{title} | {equipment}", result, ct);

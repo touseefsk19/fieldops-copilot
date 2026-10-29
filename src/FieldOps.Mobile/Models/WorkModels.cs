@@ -4,5 +4,5 @@ namespace FieldOps.Mobile.Models;
 public record RequestDto(int Id, string Title, string? Description, string Equipment, string Status, DateTime CreatedAtUtc);
 public record ApproveResponse(int Id, string Status);
 public record AgentRequest(string Message);
-public record AgentResponse(string Reply, List<string> ToolsCalled);
+public record AgentResponse(string Reply, List<string> ToolsCalled, List<int>? CreatedRequestIds);
 public record MeResponse(string? Name, List<string> Roles);

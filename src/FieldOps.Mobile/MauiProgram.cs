@@ -25,6 +25,7 @@ public static class MauiProgram
 #endif
 
         builder.Services.AddSingleton<TokenStore>();
+        builder.Services.AddSingleton<RequestsCache>();   // one cache for the whole app
         builder.Services.AddHttpClient<FieldOpsApi>(c =>
         {
             c.BaseAddress = new Uri(baseUrl);

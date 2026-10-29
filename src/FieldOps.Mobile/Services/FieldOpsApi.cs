@@ -5,8 +5,11 @@ using FieldOps.Mobile.Models;
 
 namespace FieldOps.Mobile.Services;
 
-// One exception type the UI can show as-is: plain words, no stack traces
-public class ApiException(string message) : Exception(message);
+// One exception type the UI can show as-is. IsNetworkError = the server couldn't be reached at all.
+public class ApiException(string message, bool isNetworkError = false) : Exception(message)
+{
+    public bool IsNetworkError { get; } = isNetworkError;
+}
 
 public class FieldOpsApi(HttpClient http, TokenStore tokens)
 {
@@ -55,7 +58,7 @@ public class FieldOpsApi(HttpClient http, TokenStore tokens)
         }
         catch (HttpRequestException)
         {
-            throw new ApiException("Can't reach the API. Is it running on port 5266?");
+                       throw new ApiException("Can't reach the API. Is it running on port 5266?", isNetworkError: true);
         }
         catch (TaskCanceledException) when (!ct.IsCancellationRequested)
         {

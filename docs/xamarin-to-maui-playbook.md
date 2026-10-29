@@ -1,6 +1,6 @@
 # Xamarin.Forms → .NET MAUI: a migration playbook from 7 enterprise apps
 
-*Touseef Ahamed S K · Technical Lead · lessons from migrating 7 production apps for SABIC 
+*Touseef Ahamed S K · Technical Lead · lessons from migrating 7 production apps for a global petrochemicals client 
 
 ## Context
 Xamarin support ended in May 2024. We migrated 7 enterprise apps (Android + iOS), and I personally migrated 4. Apps ranged from simple news readers to complex apps with offline data, barcode scanning and certificate-based auth.

@@ -1,11 +1,12 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using FieldOps.Mobile.Models;
 using FieldOps.Mobile.Services;
 
 namespace FieldOps.Mobile.ViewModels;
 
-public partial class RequestsViewModel(FieldOpsApi api) : ObservableObject
+public partial class RequestsViewModel(FieldOpsApi api, RequestsCache cache) : ObservableObject
 {
     [ObservableProperty] private bool isBusy;
     [ObservableProperty] private string message = "";
@@ -13,7 +14,7 @@ public partial class RequestsViewModel(FieldOpsApi api) : ObservableObject
 
     public ObservableCollection<RequestItem> Requests { get; } = [];
 
-    [RelayCommand]   // → LoadCommand
+       [RelayCommand]   // → LoadCommand
     private async Task LoadAsync()
     {
         IsBusy = true;
@@ -26,11 +27,20 @@ public partial class RequestsViewModel(FieldOpsApi api) : ObservableObject
             WhoAmI = $"Signed in as {me.Name} · {(isSupervisor ? "Supervisor" : "Technician")}";
 
             var items = await api.GetRequestsAsync();
-            Requests.Clear();
-            foreach (var r in items)
-                Requests.Add(new RequestItem(r, isSupervisor && r.Status == "PendingApproval", ApproveCommand));
-
-            if (Requests.Count == 0) Message = "No requests yet.";
+            await cache.SaveAsync(items);          // keep a copy for when we're offline
+            Show(items, isSupervisor);
+        }
+        catch (ApiException ex) when (ex.IsNetworkError)
+        {
+            var cached = await cache.LoadAsync();
+            if (cached is null)
+            {
+                Message = ex.Message;              // offline and nothing saved yet
+                return;                            // (finally still runs)
+            }
+            Show(cached.Items, isSupervisor: false);   // offline = read-only: no Approve buttons
+            var savedAt = DateTime.SpecifyKind(cached.SavedAtUtc, DateTimeKind.Utc).ToLocalTime();
+            Message = $"Offline · showing the list from {savedAt:dd MMM HH:mm}. Approve is off until the API is back.";
         }
         catch (ApiException ex)
         {
@@ -40,6 +50,16 @@ public partial class RequestsViewModel(FieldOpsApi api) : ObservableObject
         {
             IsBusy = false;
         }
+    }
+
+    // Fills the list. CanApprove only for a supervisor AND a request still waiting.
+    private void Show(List<RequestDto> items, bool isSupervisor)
+    {
+        Requests.Clear();
+        foreach (var r in items)
+            Requests.Add(new RequestItem(r, isSupervisor && r.Status == "PendingApproval", ApproveCommand));
+
+        if (Requests.Count == 0) Message = "No requests yet.";
     }
 
     [RelayCommand]   // → ApproveCommand (IAsyncRelayCommand<RequestItem>)

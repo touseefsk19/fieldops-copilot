@@ -13,20 +13,24 @@ public partial class AskViewModel(FieldOpsApi api) : ObservableObject
     [ObservableProperty] private string error = "";
     [ObservableProperty] private bool isBusy;
 
+    [ObservableProperty] private string askedQuestion = "";   // shown above the answer
+
     public ObservableCollection<Citation> Citations { get; } = [];
 
     [RelayCommand]   // generates AskCommand for the button
     private async Task AskAsync()
     {
         if (IsBusy || string.IsNullOrWhiteSpace(Question)) return;
-
+        var q = Question.Trim();          // keep a copy...
+        Question = "";                    // ...then empty the box, so old text never leaks into the next question
+        AskedQuestion = $"You asked: {q}";
         IsBusy = true;
         Error = "";
         Answer = "";
         Citations.Clear();
         try
         {
-            var result = await api.AskAsync(Question.Trim());
+            var result = await api.AskAsync(q);
             Answer = result.Answer;
             foreach (var c in result.Citations) Citations.Add(c);
         }

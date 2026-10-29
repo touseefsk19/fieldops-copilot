@@ -5,7 +5,7 @@ using Microsoft.Extensions.AI;
 namespace FieldOps.Api.Endpoints;
 
 public record AgentRequest(string Message);
-public record AgentResponse(string Reply, List<string> ToolsCalled);
+public record AgentResponse(string Reply, List<string> ToolsCalled, List<int> CreatedRequestIds);
 
 public static class AgentChatEndpoints
 {
@@ -65,7 +65,7 @@ public static class AgentChatEndpoints
                 ? "I can't do that here. Approvals are made by a supervisor in the FieldOps app."
                 : PiiRedactor.Redact(response.Text);
 
-            return Results.Ok(new AgentResponse(reply, toolsCalled));
+                return Results.Ok(new AgentResponse(reply, toolsCalled, tools.CreatedRequestIds));
         })
         .RequireAuthorization()
         .RequireRateLimiting("ai")
