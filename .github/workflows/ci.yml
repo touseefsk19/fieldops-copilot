@@ -44,6 +44,9 @@ jobs:
           done
           echo "SQL Server did not start"; exit 1
 
+      - name: Manual ingestion checks (Python)
+        run: python3 -m unittest discover -s tools/ingest -v
+
       - name: Build and test
         run: dotnet test tests/FieldOps.Api.Tests
 
