@@ -22,8 +22,14 @@ builder.Services.AddHealthChecks()
     .AddDbContextCheck<FieldOpsDbContext>(tags: ["ready"]);
 builder.Services.AddProblemDetails();
 
-// Authentication: validate JWT bearer tokens (settings come from configuration)
-builder.Services.AddAuthentication().AddJwtBearer();
+// Authentication: validate JWT bearer tokens. Issuer/audience come from configuration:
+// Development = dotnet user-jwts, Production = Microsoft Entra ID (set on the Container App)
+builder.Services.AddAuthentication().AddJwtBearer(options =>
+{
+    // Entra ID v2 tokens carry the user's login in "preferred_username"
+    if (!builder.Environment.IsDevelopment())
+        options.TokenValidationParameters.NameClaimType = "preferred_username";
+});
 
 // Authorization: named rules that endpoints can require
 builder.Services.AddAuthorizationBuilder()
