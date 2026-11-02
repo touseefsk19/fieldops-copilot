@@ -8,6 +8,7 @@ using FieldOps.Api.Rag;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.RateLimiting;
 using FieldOps.Api.Agent;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +17,9 @@ builder.Logging.ClearProviders();
 builder.Logging.AddJsonConsole();
 
 builder.Services.AddOpenApi();
-builder.Services.AddHealthChecks();
+// Health: "alive" = the process runs; "ready" = it can also reach the database
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<FieldOpsDbContext>(tags: ["ready"]);
 builder.Services.AddProblemDetails();
 
 // Authentication: validate JWT bearer tokens (settings come from configuration)
@@ -94,7 +97,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();   // after auth, so the limiter knows WHO is calling
 
-app.MapHealthChecks("/health");
+// /health stays cheap (no DB call), so probes never wake the paused database
+app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = _ => false });
+// /health/ready runs the DB check: proves the cloud identity can sign in to SQL
+app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = c => c.Tags.Contains("ready") });
 
 app.MapGet("/api/info", (IConfiguration config, ILogger<Program> logger) =>
 {
