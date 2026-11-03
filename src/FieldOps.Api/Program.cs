@@ -9,6 +9,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Threading.RateLimiting;
 using FieldOps.Api.Agent;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using System.ClientModel.Primitives;
+using Azure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,20 +37,38 @@ builder.Services.AddAuthentication().AddJwtBearer(options =>
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("Supervisor", policy => policy.RequireRole("supervisor"));
 
-// AI: one IChatClient for the whole app, pointed at Ollama's OpenAI-compatible endpoint
-builder.Services.AddSingleton<IChatClient>(sp =>
+// AI: one OpenAI-protocol client for chat AND embeddings.
+// Development: Ollama's OpenAI-compatible endpoint. Production: Azure OpenAI v1 API,
+// signed in with the Container App's managed identity (API keys are disabled on the resource).
+builder.Services.AddSingleton(sp =>
 {
-   var config = sp.GetRequiredService<IConfiguration>();
-   var openAi = new OpenAIClient(
-    new ApiKeyCredential("ollama"),  // Ollama ignores the key, but the client requires one
-    new OpenAIClientOptions {Endpoint = new Uri(config["Ai:Endpoint"]!)
-    });
-   return openAi.GetChatClient(config["Ai:Model"]!).AsIChatClient(); 
+    var config = sp.GetRequiredService<IConfiguration>();
+    var options = new OpenAIClientOptions { Endpoint = new Uri(config["Ai:Endpoint"]!) };
+
+    if (config["Ai:Provider"] == "AzureOpenAI")
+    {
+        var credential = new DefaultAzureCredential(new DefaultAzureCredentialOptions
+        {
+            ManagedIdentityClientId = config["Ai:ManagedIdentityClientId"]
+        });
+        var tokenPolicy = new BearerTokenPolicy(credential, "https://cognitiveservices.azure.com/.default");
+        #pragma warning disable OPENAI001 // token-based sign-in constructor is marked "evaluation"; it is the documented way to use Azure OpenAI v1 with Entra ID
+        return new OpenAIClient(tokenPolicy, options);
+        #pragma warning restore OPENAI001
+    }
+
+    return new OpenAIClient(new ApiKeyCredential("ollama"), options);   // Ollama ignores the key, the client needs one
 });
 
-// AI: the embedding client, a typed HttpClient pointed at Ollama
-builder.Services.AddHttpClient<OllamaEmbedder>(client =>
-    client.BaseAddress = new Uri(builder.Configuration["Ai:OllamaBase"]!));
+builder.Services.AddSingleton<IChatClient>(sp => sp.GetRequiredService<OpenAIClient>()
+    .GetChatClient(sp.GetRequiredService<IConfiguration>()["Ai:Model"]!)
+    .AsIChatClient());
+
+builder.Services.AddSingleton<IEmbeddingGenerator<string, Embedding<float>>>(sp => sp.GetRequiredService<OpenAIClient>()
+    .GetEmbeddingClient(sp.GetRequiredService<IConfiguration>()["Ai:EmbeddingModel"]!)
+    .AsIEmbeddingGenerator());
+
+builder.Services.AddSingleton<Embedder>();
 
 // Register the DbContext. Lifetime = Scoped: one instance per HTTP request
 builder.Services.AddDbContext<FieldOpsDbContext>(options =>

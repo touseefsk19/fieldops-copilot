@@ -12,7 +12,7 @@ public record SearchHit(ManualChunk Chunk, double Score, double KeywordScore = 0
 
 // Retrieval in one place, used by /api/ask and /api/eval.
 // Registered as Scoped because it uses FieldOpsDbContext, which is Scoped.
-public class Retriever(FieldOpsDbContext db, OllamaEmbedder embedder)
+public class Retriever(FieldOpsDbContext db, Embedder embedder)
 {
     public const double MinScore = 0.35;        // meaning bar
     public const double MinKeywordScore = 2.5;  // keyword bar: a strong match on a rare word

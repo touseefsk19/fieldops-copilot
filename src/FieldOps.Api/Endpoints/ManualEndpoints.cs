@@ -15,7 +15,7 @@ public static class ManualEndpoints
     {
         // Supervisor only: read every .md file in Manuals/, split it into sections, embed, store
         app.MapPost("/api/manuals/ingest", async (
-            FieldOpsDbContext db, OllamaEmbedder embedder, IWebHostEnvironment env, CancellationToken ct) =>
+            FieldOpsDbContext db, Embedder embedder, IWebHostEnvironment env, CancellationToken ct) =>
         {
             var folder = Path.Combine(env.ContentRootPath, "Manuals");
             var files = Directory.GetFiles(folder, "*.md", SearchOption.AllDirectories);
