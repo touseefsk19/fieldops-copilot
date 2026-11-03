@@ -134,7 +134,7 @@ app.MapGet("/api/info", (IConfiguration config, ILogger<Program> logger) =>
     return Results.Ok(new
     {
         name = config["App:Name"],
-        version = "0.2.0",
+        version = "0.3.0",
         environment = app.Environment.EnvironmentName
     });
 })
